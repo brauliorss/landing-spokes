@@ -47,8 +47,8 @@ param securityApprovalId = ''
 param processesUntrustedFiles = true
 param fileScanningVerified = false
 param actionGroupResourceId = ''
-param siemAuthorizationRuleId = ''
-param siemEventHubName = ''
+param siemAuthorizationRuleId = 'PENDIENTE-ID-REGLA-EVENT-HUB-SIEM'
+param siemEventHubName = 'PENDIENTE-NOMBRE-EVENT-HUB-SIEM'
 
 param models = []
 param modelsApproved = false

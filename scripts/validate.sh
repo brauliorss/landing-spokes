@@ -10,6 +10,9 @@ trap 'rm -rf "$validation_dir"' EXIT
 "$BICEP_BIN" lint infra/main.bicep
 "$BICEP_BIN" build-params environments/dev.example.bicepparam --outfile "$validation_dir/example.json"
 MOP_ARM="$validation_dir/main.json" python3 -m unittest discover -s tests -v
+if rg -n --glob '*.bicep' 'dnsForwardingRulesets|virtualHubs|hubVirtualNetworkConnections|dnsResolvers' infra; then
+  echo 'ERROR: DNS forwarding y Virtual WAN se configuran manualmente fuera del Bicep.'; exit 1
+fi
 if python3 scripts/check_parameters.py "$validation_dir/example.json" > "$validation_dir/expected-errors.txt"; then
   echo 'ERROR: se aceptaron marcadores del ejemplo.'; exit 1
 fi

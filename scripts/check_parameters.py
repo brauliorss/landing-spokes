@@ -30,7 +30,7 @@ def check(p):
         require(zone_id.lower().endswith('/'+expected_zones.get(service,'').lower()),f'Zona DNS de {service}: nombre privado incorrecto.')
     if p.get('actionGroupResourceId'):
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.Insights/actionGroups/[^/]+',p['actionGroupResourceId'])),'Action Group: ID inválido.')
-    require(bool(p.get('siemAuthorizationRuleId'))==bool(p.get('siemEventHubName')),'SIEM: proporcionar ID y nombre juntos.')
+    require(bool(p.get('siemAuthorizationRuleId')) and bool(p.get('siemEventHubName')),'SIEM: el ID de regla y el nombre del Event Hub son obligatorios.')
     if p.get('siemAuthorizationRuleId'):
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.EventHub/namespaces/[^/]+/authorizationRules/[^/]+',p['siemAuthorizationRuleId'])),'SIEM: ID de regla del namespace inválido.')
     nets={}

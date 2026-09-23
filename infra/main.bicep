@@ -89,8 +89,10 @@ param hostUsesTables bool = false
 param hostUsesBlobTriggers bool = false
 @allowed([true])
 param hostUsesDurableStorage bool = true
-param siemAuthorizationRuleId string = ''
-param siemEventHubName string = ''
+@description('ID completo de la regla de autorizacion del namespace Event Hub usada por Azure Monitor para entregar logs al SIEM.')
+param siemAuthorizationRuleId string
+@description('Nombre del Event Hub corporativo que recibe los logs del spoke.')
+param siemEventHubName string
 param actionGroupResourceId string = ''
 @minValue(1)
 param requestsAlertThreshold int = 10000
@@ -98,7 +100,7 @@ param requestsAlertThreshold int = 10000
 module contracts './modules/contracts.bicep' = {
   name: 'mop-contratos'
   params: {
-    validSecurity: any(endsWith(string(vnetAddressPrefixes[0]), '/24') && storageAccountName != businessStorageAccountName && toLower(resourceGroup().name) != 'rg-poc-premop-cr' && (empty(models) || modelsApproved) && !empty(tags.?iniciativa ?? '') && !empty(tags.?DataClassification ?? '') && tags.?OpsDept == 'DTI' && !empty(tags.?UserDept ?? '') && empty(filter(allowedOrigins, origin => contains(origin, '*'))) && (empty(siemAuthorizationRuleId) == empty(siemEventHubName)))
+    validSecurity: any(endsWith(string(vnetAddressPrefixes[0]), '/24') && storageAccountName != businessStorageAccountName && toLower(resourceGroup().name) != 'rg-poc-premop-cr' && (empty(models) || modelsApproved) && !empty(tags.?iniciativa ?? '') && !empty(tags.?DataClassification ?? '') && tags.?OpsDept == 'DTI' && !empty(tags.?UserDept ?? '') && empty(filter(allowedOrigins, origin => contains(origin, '*'))) && !empty(siemAuthorizationRuleId) && !empty(siemEventHubName))
     validSettings: any(empty(filter(items(applicationSettings), setting => startsWith(toLower(setting.key), 'azurewebjobsstorage') || contains(['functions_worker_runtime', 'functions_extension_version', 'applicationinsights_connection_string'], toLower(setting.key)))))
     validActivation: any(!activateFunctionApp || (!empty(models) && (batchEnabled || empty(filter(models, model => contains(model.sku, 'Batch')))) && !empty(cosmosPrivateIps) && inventoryVerified && networkVerified && defenderVerified && siemVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(functionPrivateIps) && !empty(apiClientPrefixes) && !empty(monitorPrefixes) && !empty(actionGroupResourceId) && (!processesUntrustedFiles || fileScanningVerified)))
   }

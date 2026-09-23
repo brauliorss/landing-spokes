@@ -1,8 +1,10 @@
 # MOP Express — spoke privado CAF
 
-Infraestructura modular para migrar MOP Express sin modificar `RG-POC-PreMop-CR`. Conserva Function/Durable con plan B2, Storage del host LRS, documentos RA-GRS, Cosmos `premop-db`, OpenAI Batch y Document Intelligence.
+Infraestructura modular para migrar MOP Express sin modificar `RG-POC-PreMop-CR`. Conserva Function/Durable y actualiza su plan a P1v4 para la conectividad privada; mantiene Storage del host LRS, documentos RA-GRS, Cosmos `premop-db`, OpenAI Batch y Document Intelligence.
 
 Añade VNet `/24`, NSG, endpoints privados con zonas DNS centralizadas, Entra, permisos por recurso, diagnósticos y Defender Storage con herencia CAF. La conexión Virtual WAN de producción queda a cargo de plataforma; no crea peering, DNS personalizado, Application Insights ni IP pública.
+
+El DNS Forwarding Ruleset y la conexión al Virtual WAN Hub se realizan manualmente por plataforma; no se incluyen en este Bicep.
 
 La Function queda detenida y los modelos vacíos por defecto. El código de las 15 Functions, los documentos y el estado Durable no se copian desde el export.
 

@@ -14,7 +14,7 @@ def rid(kind):return f'/subscriptions/{SID}/resourceGroups/caf/providers/{kind}/
 def foundation():
     zones={'blob':'privatelink.blob.core.windows.net','queue':'privatelink.queue.core.windows.net','table':'privatelink.table.core.windows.net','sites':'privatelink.azurewebsites.net','cosmosSql':'privatelink.documents.azure.com','cognitiveServicesAccount':'privatelink.cognitiveservices.azure.com','openAi':'privatelink.openai.azure.com'}
     zone_ids={service:f'/subscriptions/{SID}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/{name}' for service,name in zones.items()}
-    return dict(tags={'iniciativa':'MOP','DataClassification':'Interna','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-mop-new',planName='plan-mop-new',storageAccountName='stmopnew',businessStorageAccountName='stmopdocs',cosmosAccountName='cosmos-mop-new',openAiAccountName='oai-mop-new',documentIntelligenceAccountName='di-mop-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},routeTableResourceId=rid('Microsoft.Network/routeTables'),logAnalyticsWorkspaceResourceId=rid('Microsoft.OperationalInsights/workspaces'),privateDnsZoneResourceIds=zone_ids)
+    return dict(tags={'iniciativa':'MOP','DataClassification':'Interna','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-mop-new',planName='plan-mop-new',storageAccountName='stmopnew',businessStorageAccountName='stmopdocs',cosmosAccountName='cosmos-mop-new',openAiAccountName='oai-mop-new',documentIntelligenceAccountName='di-mop-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},routeTableResourceId=rid('Microsoft.Network/routeTables'),logAnalyticsWorkspaceResourceId=rid('Microsoft.OperationalInsights/workspaces'),siemAuthorizationRuleId=rid('Microsoft.EventHub/namespaces/central/authorizationRules'),siemEventHubName='siem-logs',privateDnsZoneResourceIds=zone_ids)
 def active():return dict(foundation(),models=[{'name':'approved','model':'approved-model','version':'approved-version','sku':'GlobalStandard','capacity':1}],modelsApproved=True,cosmosPrivateIps=['10.181.0.6'],fileScanningVerified=True,activateFunctionApp=True,inventoryVerified=True,networkVerified=True,defenderVerified=True,siemVerified=True,applicationVerified=True,securityApprovalId='CAF-123',allowedPrincipalIds=[SID],functionPrivateIps=['10.181.0.5'],apiClientPrefixes=['10.178.0.0/24'],monitorPrefixes=['10.179.1.4'],actionGroupResourceId=rid('Microsoft.Insights/actionGroups'))
 class Parameters(unittest.TestCase):
     def test_foundation_and_activation(self):
@@ -32,7 +32,7 @@ class Parameters(unittest.TestCase):
         self.assertTrue(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=False)))
         self.assertEqual(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=True)),[])
     def test_invalid_network_and_permissions(self):
-        for key,value in [('allowedOrigins',['*']),('functionAppName','azfunc-premop-CR'),('functionPrivateIps',['10.181.0.1']),('routeTableResourceId','x'),('siemEventHubName','unpaired'),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
+        for key,value in [('allowedOrigins',['*']),('functionAppName','azfunc-premop-CR'),('functionPrivateIps',['10.181.0.1']),('routeTableResourceId','x'),('siemEventHubName',''),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
             self.assertTrue(checker.check(dict(foundation(),**{key:value})))
     def test_settings_rejection_does_not_disclose_values(self):
         errors=checker.check(dict(foundation(),applicationSettings={'AZUREWEBJOBSSTORAGE__clientId':'SECRET-DO-NOT-PRINT'}))
@@ -95,9 +95,9 @@ class Template(unittest.TestCase):
         self.assertIn('storageEndpoints',str(self.arm['resources']['runtime']['dependsOn']))
         self.assertTrue(self.arm['parameters']['hostUsesDurableStorage']['defaultValue'])
         self.assertTrue(self.arm['parameters']['processesUntrustedFiles']['defaultValue'])
-    def test_original_capacity_preserved(self):
+    def test_network_ready_capacity(self):
         plan=next(r for r in self.resources if r['type']=='Microsoft.Web/serverfarms')
-        self.assertEqual(plan['sku']['name'],'B2');self.assertEqual(plan['sku']['capacity'],1)
+        self.assertEqual(plan['sku']['name'],'P1v4');self.assertEqual(plan['sku']['tier'],'PremiumV4');self.assertEqual(plan['sku']['capacity'],1)
         storage=next(r for r in self.resources if r['type']=='Microsoft.Storage/storageAccounts')
         self.assertEqual(storage['sku']['name'],"[parameters('storageSku')]");
         self.assertEqual(self.arm['resources']['businessStorage']['properties']['parameters']['storageSku']['value'],'Standard_RAGRS');self.assertFalse(storage['properties']['allowSharedKeyAccess'])
