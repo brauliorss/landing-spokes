@@ -5,11 +5,11 @@
 | Control | Implementado en Bicep | Validación pendiente / responsable |
 | --- | --- | --- |
 | Clasificación | Etiqueta `DataClassification` obligatoria mediante contrato | Dueño de datos y Seguridad determinan sensibilidad, residencia y retención |
-| Red | NSG por subred, endpoints privados y acceso público deshabilitado | Plataforma: rutas, DNS/DINE, VPN, firewall, peering inverso |
+| Red | NSG por subred, endpoints privados y acceso público deshabilitado; sin tabla de rutas o conexión al hub | Plataforma: rutas, DNS/DINE, Virtual WAN, VPN y firewall después del despliegue |
 | Identidad | Entra obligatorio, respuesta 401 sin autenticación, lista de object IDs; identidad administrada para datos | Aplicación: autorización por operación; Identidad: registro, roles, PIM y ciclo de vida |
 | Cifrado | HTTPS/TLS 1.2; cifrado administrado por Azure en reposo; Storage sin claves compartidas | Clasificación determina si se necesitan CMK u otros controles; no se configura CMK por defecto |
 | Auditoría | Diagnósticos de Function, Storage Blob/Queue/Table, Cosmos, OpenAI, Document Intelligence y Key Vault hacia LAW central; Event Hub opcional | SOC confirma recepción, retención, correlación y acceso; plataforma enruta Activity Log y alertas Defender al SIEM |
-| Telemetría | App Insights privado; alertas Function de 5xx y volumen con Action Group existente | AMPLS/DNS y pruebas de llegada, fallos de dependencias, latencia y operación Durable |
+| Telemetría | Diagnósticos hacia LAW central y alertas Function de 5xx y volumen con Action Group existente | AMPLS/DNS y pruebas de llegada; Dynatrace y telemetría de aplicación se coordinan fuera de la plantilla |
 | Archivos | Defender Storage habilitado; activación condicionada a comprobación de análisis | Código debe bloquear pendientes, maliciosos, errores/no analizados y resultados obsoletos; SOC valida el recorrido |
 | Resiliencia | Recuperación de blobs 14 días, versiones, Cosmos continuo 7 días, Key Vault 90 días/purge protection | Aprobar RTO/RPO y realizar restauración; B1 de una instancia y LRS no son HA zonal |
 | Purview, SharePoint y guardrails | Fuera del spoke por acuerdo del usuario | Hub; no se declara cobertura por solo referenciarlo |

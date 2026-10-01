@@ -2,7 +2,7 @@
 
 Infraestructura privada de ANALISISDEC, revisada contra los documentos de landing zone y los acuerdos de seguridad. La exportación `main-6.bicep` se utiliza como inventario parcial. No contiene el código recuperado de la aplicación.
 
-Crea una Function Python con Durable, plan B1, dos Storage separados, Cosmos DB, OpenAI, Document Intelligence, Key Vault y una VNet `/24` con endpoints privados y NSG. Usa zonas DNS centralizadas; la conexión Virtual WAN de producción queda a cargo de plataforma. No crea peering, DNS personalizado, Application Insights ni IP pública.
+Crea una Function Python con Durable, plan B1, dos Storage separados, Cosmos DB, OpenAI, Document Intelligence, Key Vault y una VNet `/24` con endpoints privados y NSG. Usa zonas DNS centralizadas; la tabla de rutas y la conexión Virtual WAN quedan a cargo de plataforma después de desplegar la fundación. No crea ni asocia tablas de rutas, peering, DNS personalizado, Application Insights o IP pública.
 
 La Function queda **detenida**, sin modelos por defecto. Se preservan los contenedores de negocio y el esquema de Cosmos. Defender for Storage queda habilitado con herencia corporativa; los demás planes se verifican, no se administran desde este spoke.
 

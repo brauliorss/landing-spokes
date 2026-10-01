@@ -11,7 +11,10 @@ def load(name):
 checker=load('check_parameters');security=load('check_security')
 SID='11111111-1111-1111-1111-111111111111'
 def rid(kind):return f'/subscriptions/{SID}/resourceGroups/caf/providers/{kind}/central'
-def foundation():return dict(tags={'iniciativa':'ANALISISDEC','DataClassification':'Interna','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-analisisdec-new',planName='plan-analisisdec-new',storageAccountName='stanalisisdecnew',businessStorageAccountName='stanalisisdecdocs',cosmosAccountName='cosmos-analisisdec-new',openAiAccountName='oai-analisisdec-new',documentIntelligenceAccountName='di-analisisdec-new',keyVaultName='kv-analisisdec-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},routeTableResourceId=rid('Microsoft.Network/routeTables'),logAnalyticsWorkspaceResourceId=rid('Microsoft.OperationalInsights/workspaces'),privateDnsZoneResourceIds={service:f'/subscriptions/{SID}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/privatelink.{service}.example' for service in ('blob','queue','table','sites','cosmosSql','cognitiveServicesAccount','keyVault')})
+def foundation():
+    zones={'blob':'privatelink.blob.core.windows.net','queue':'privatelink.queue.core.windows.net','table':'privatelink.table.core.windows.net','sites':'privatelink.azurewebsites.net','cosmosSql':'privatelink.documents.azure.com','cognitiveServicesAccount':'privatelink.cognitiveservices.azure.com','openAi':'privatelink.openai.azure.com','keyVault':'privatelink.vaultcore.azure.net'}
+    zone_ids={service:f'/subscriptions/{SID}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/{name}' for service,name in zones.items()}
+    return dict(tags={'iniciativa':'ANALISISDEC','DataClassification':'Interna','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-analisisdec-new',planName='plan-analisisdec-new',storageAccountName='stanalisisdecnew',businessStorageAccountName='stanalisisdecdocs',cosmosAccountName='cosmos-analisisdec-new',openAiAccountName='oai-analisisdec-new',documentIntelligenceAccountName='di-analisisdec-new',keyVaultName='kv-analisisdec-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},logAnalyticsWorkspaceResourceId=rid('Microsoft.OperationalInsights/workspaces'),privateDnsZoneResourceIds=zone_ids)
 def active():return dict(foundation(),models=[{'name':'approved','model':'approved-model','version':'approved-version','sku':'GlobalStandard','capacity':1}],modelsApproved=True,cosmosPrivateIps=['10.181.0.6'],fileScanningVerified=True,activateFunctionApp=True,inventoryVerified=True,networkVerified=True,defenderVerified=True,siemVerified=True,applicationVerified=True,securityApprovalId='CAF-123',allowedPrincipalIds=[SID],functionPrivateIps=['10.181.0.5'],apiClientPrefixes=['10.178.0.0/24'],monitorPrefixes=['10.179.1.4'],actionGroupResourceId=rid('Microsoft.Insights/actionGroups'))
 class Parameters(unittest.TestCase):
     def test_foundation_and_activation(self):
@@ -27,7 +30,7 @@ class Parameters(unittest.TestCase):
         self.assertTrue(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=False)))
         self.assertEqual(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=True)),[])
     def test_invalid_network_and_permissions(self):
-        for key,value in [('allowedOrigins',['*']),('functionAppName','FA-MVP-ANALISISDEC-CR'),('functionPrivateIps',['10.181.0.1']),('routeTableResourceId','x'),('siemEventHubName','unpaired'),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
+        for key,value in [('allowedOrigins',['*']),('functionAppName','FA-MVP-ANALISISDEC-CR'),('functionPrivateIps',['10.181.0.1']),('logAnalyticsWorkspaceResourceId','x'),('siemEventHubName','unpaired'),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
             self.assertTrue(checker.check(dict(foundation(),**{key:value})))
     def test_settings_rejection_does_not_disclose_values(self):
         errors=checker.check(dict(foundation(),applicationSettings={'AZUREWEBJOBSSTORAGE__clientId':'SECRET-DO-NOT-PRINT'}))
@@ -55,6 +58,9 @@ class Template(unittest.TestCase):
             self.assertNotEqual(r['type'],'Microsoft.OperationalInsights/workspaces')
             if 'publicNetworkAccess' in r.get('properties',{}):self.assertEqual(r['properties']['publicNetworkAccess'],'Disabled')
         self.assertEqual(len([r for r in self.resources if r['type']=='Microsoft.Network/privateEndpoints/privateDnsZoneGroups']),len([r for r in self.resources if r['type']=='Microsoft.Network/privateEndpoints']))
+        vnet=next(r for r in self.resources if r['type']=='Microsoft.Network/virtualNetworks')
+        for subnet_copy in vnet['properties']['copy']:
+            self.assertNotIn('routeTable',subnet_copy['input']['properties'])
     def test_secure_settings_and_auth(self):
         self.assertEqual(self.arm['parameters']['applicationSettings']['type'],'secureObject')
         self.assertFalse(self.arm['parameters']['activateFunctionApp']['defaultValue'])

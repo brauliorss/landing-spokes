@@ -5,7 +5,6 @@ param tags object = {}
 param vnetName string
 param vnetAddressPrefixes array
 param subnetPrefixes object
-param routeTableResourceId string
 param apiClientPrefixes array
 param operatorPrefixes array
 param monitorPrefixes array
@@ -57,9 +56,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
       name: subnet.name
       properties: {
         addressPrefix: subnet.prefix
-        routeTable: {
-          id: routeTableResourceId
-        }
         networkSecurityGroup: {
           id: subnetNsgs[index].outputs.id
         }

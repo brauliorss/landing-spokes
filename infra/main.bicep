@@ -24,9 +24,6 @@ param subnetPrefixes {
   privateEndpoints: string
   functionsIntegration: string
 }
-@description('ID de tabla de rutas corporativa existente; no se modifica su contenido.')
-@minLength(1)
-param routeTableResourceId string
 param logAnalyticsWorkspaceResourceId string
 @description('IDs completos de zonas DNS privadas centralizadas en RG-PRIVATEDNS-PR.')
 param privateDnsZoneResourceIds {
@@ -36,6 +33,7 @@ param privateDnsZoneResourceIds {
   sites: string
   cosmosSql: string
   cognitiveServicesAccount: string
+  openAi: string
   keyVault: string
 }
 param businessStorageAccountName string
@@ -113,7 +111,6 @@ module network './modules/network.bicep' = {
     vnetName: vnetName
     vnetAddressPrefixes: vnetAddressPrefixes
     subnetPrefixes: subnetPrefixes
-    routeTableResourceId: routeTableResourceId
     apiClientPrefixes: apiClientPrefixes
     operatorPrefixes: operatorPrefixes
     monitorPrefixes: monitorPrefixes
@@ -244,7 +241,7 @@ module services './modules/services.bicep' = {
 var targets = [
   { name: businessStorageAccountName, id: businessStorage.outputs.resourceId, group: 'blob', zoneId: privateDnsZoneResourceIds.blob }
   { name: cosmosAccountName, id: services.outputs.cosmosId, group: 'Sql', zoneId: privateDnsZoneResourceIds.cosmosSql }
-  { name: openAiAccountName, id: services.outputs.openAiId, group: 'account', zoneId: privateDnsZoneResourceIds.cognitiveServicesAccount }
+  { name: openAiAccountName, id: services.outputs.openAiId, group: 'account', zoneId: privateDnsZoneResourceIds.openAi }
   { name: documentIntelligenceAccountName, id: services.outputs.documentIntelligenceId, group: 'account', zoneId: privateDnsZoneResourceIds.cognitiveServicesAccount }
   { name: keyVaultName, id: services.outputs.vaultId, group: 'vault', zoneId: privateDnsZoneResourceIds.keyVault }
 ]

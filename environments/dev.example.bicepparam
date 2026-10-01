@@ -11,7 +11,6 @@ param subnetPrefixes = {
   privateEndpoints: 'PENDIENTE-IPAM'
   functionsIntegration: 'PENDIENTE-IPAM'
 }
-param routeTableResourceId = 'PENDIENTE-ID-TABLA-CAF'
 param logAnalyticsWorkspaceResourceId = 'PENDIENTE-ID-LOG-ANALYTICS'
 param privateDnsZoneResourceIds = {
   blob: 'PENDIENTE-ID-ZONA-BLOB'
@@ -20,6 +19,7 @@ param privateDnsZoneResourceIds = {
   sites: 'PENDIENTE-ID-ZONA-AZUREWEBSITES'
   cosmosSql: 'PENDIENTE-ID-ZONA-COSMOS-SQL'
   cognitiveServicesAccount: 'PENDIENTE-ID-ZONA-COGNITIVE-SERVICES'
+  openAi: 'PENDIENTE-ID-ZONA-OPENAI'
   keyVault: 'PENDIENTE-ID-ZONA-KEY-VAULT'
 }
 param businessStorageAccountName = 'PENDIENTE'

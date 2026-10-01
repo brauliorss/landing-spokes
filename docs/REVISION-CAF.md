@@ -19,8 +19,8 @@ Los documentos difieren en ciertos límites de suscripción y organización de A
 | OpenAI | S0, identidad, autenticación local y acceso público deshabilitados | Despliegues de modelos vacíos hasta confirmar nombre, versión, modalidad y cuota |
 | Document Intelligence | FormRecognizer S0, identidad, acceso privado y Entra | Mantiene servicio; validar que el SDK envíe documentos por un mecanismo compatible con red privada |
 | Key Vault | Standard, RBAC, privado, recuperación 90 días y protección contra purga | Acceso de aplicación solo a secretos enumerados; no se importan valores |
-| Observabilidad | App Insights de la carga con ingestión/consulta públicas deshabilitadas, LAW existente | No recrea LAW ni sus 686 tablas; requiere AMPLS corporativo |
-| Red | Una VNet `/24`, dos subredes, dos NSG, rutas existentes y DNS de Azure | Producción no crea peering; plataforma completa la conexión Virtual WAN |
+| Observabilidad | Diagnósticos hacia LAW existente y alertas con Action Group corporativo | No crea Application Insights ni recrea LAW; SOC confirma recepción y retención |
+| Red | Una VNet `/24`, dos subredes, dos NSG y DNS de Azure | La fundación queda aislada; plataforma configura manualmente rutas y Virtual WAN después del despliegue |
 
 B1 y LRS preservan la base funcional, **no ofrecen redundancia zonal ni prueban resiliencia de producción**. Se debe aprobar RTO/RPO y carga: un cambio a más instancias, otro SKU o ZRS requiere diseño y coste explícitos. Backup no sustituye alta disponibilidad ni prueba de restauración.
 
@@ -30,17 +30,17 @@ Ejemplo meramente ilustrativo para `A.B.C.0/24`:
 
 | Uso | Prefijo | Asociación |
 | --- | --- | --- |
-| Endpoints privados | `A.B.C.0/27` | NSG y tabla de rutas CAF; políticas de endpoints habilitadas |
-| Integración Functions | `A.B.C.64/26` | Delegación `Microsoft.Web/serverFarms`, NSG y tabla de rutas CAF |
+| Endpoints privados | `A.B.C.0/27` | NSG; políticas de endpoints habilitadas |
+| Integración Functions | `A.B.C.64/26` | Delegación `Microsoft.Web/serverFarms` y NSG |
 | Sin asignar | Resto del `/24` | Reserva dentro de la VNet; no crea subredes adicionales |
 
 La validación local exige un único `/24` RFC1918, subredes sin solapamientos y dentro del bloque. IPAM debe confirmar el bloque real. Esta carga no necesita las cuatro subredes de Foundry/ACA/Application Gateway del plan de agentes.
 
 Se crean nueve endpoints: host Blob/Queue/Table, documentos Blob, Function sites, Cosmos Sql, OpenAI account, Document Intelligence account y Key Vault vault. Cosmos puede asignar varias IP; no se calcula su dirección ni la de la Function de antemano. El preflight devuelve las reales para actualizar NSG. Foundation puede tener las listas vacías, pero no permite activar la Function así.
 
-DINE debe cubrir `privatelink.blob.core.windows.net`, `privatelink.queue.core.windows.net`, `privatelink.table.core.windows.net`, `privatelink.azurewebsites.net` (incluido SCM), `privatelink.documents.azure.com`, `privatelink.openai.azure.com`, `privatelink.cognitiveservices.azure.com` y `privatelink.vaultcore.azure.net`. No se crean zonas, enlaces ni grupos DNS locales. AMPLS tiene su propia cobertura DNS corporativa. Comprobar resolución desde la integración Functions, el ejecutor de publicación y clientes VPN.
+DINE debe cubrir `privatelink.blob.core.windows.net`, `privatelink.queue.core.windows.net`, `privatelink.table.core.windows.net`, `privatelink.azurewebsites.net` (incluido SCM), `privatelink.documents.azure.com`, `privatelink.openai.azure.com`, `privatelink.cognitiveservices.azure.com` y `privatelink.vaultcore.azure.net`. No se crean zonas ni enlaces de VNet; cada endpoint se asocia mediante un grupo DNS a la zona central suministrada. AMPLS tiene su propia cobertura DNS corporativa. Comprobar resolución desde la integración Functions, el ejecutor de publicación y clientes VPN.
 
-Plataforma completa la conexión Virtual WAN, las rutas de retorno y tránsito VPN. Cada endpoint se asocia a una zona centralizada en `RG-PRIVATEDNS-PR`; no se crean zonas. Revisar que la tabla corporativa no fuerce rutas incompatibles. No se crea Application Insights; Dynatrace se coordina fuera de esta plantilla. `extraEgress` requiere destino IPv4 acotado, puertos individuales y justificación.
+El Bicep no crea ni asocia tablas de rutas, peering o conexiones Virtual WAN. Plataforma configura manualmente la conectividad, las rutas de retorno y el tránsito VPN después de desplegar la fundación. Cada endpoint se asocia a una zona centralizada en `RG-PRIVATEDNS-PR`; no se crean zonas. No se crea Application Insights; Dynatrace se coordina fuera de esta plantilla. `extraEgress` requiere destino IPv4 acotado, puertos individuales y justificación.
 
 ## Identidad, modelos y compatibilidad
 
@@ -67,10 +67,10 @@ El export no recupera el paquete ejecutable, todas las dependencias ni secretos.
 
 ## Secuencia de migración
 
-1. Confirmar suscripción/RG **nuevos**, nombres, clasificación, IPAM e IDs de hub, rutas, LAW y Action Group; definir Entra y operadores. El contrato rechaza el RG de origen; el checker rechaza reutilizar nombres principales originales. Revisar manualmente propiedad y ausencia de colisiones en Azure.
+1. Confirmar suscripción/RG **nuevos**, nombres, clasificación, IPAM, LAW y Action Group; definir Entra y operadores. El contrato rechaza el RG de origen; el checker rechaza reutilizar nombres principales originales. Revisar manualmente propiedad y ausencia de colisiones en Azure.
 2. Completar un archivo de parámetros privado; ejecutar `scripts/validate.sh` con su JSON ARM, luego `az deployment group validate` y `what-if` con el RG confirmado. Revisar permisos RBAC personalizados, políticas, disponibilidad B1/Private Link, cuotas y categorías de diagnósticos. Estos comandos Azure todavía no se han ejecutado.
 3. Desplegar fundación con `activateFunctionApp=false` y `models=[]`. Esto crea la Function detenida, datos vacíos, endpoints y roles; no publica las 15 Functions ni migra documentos.
-4. Esperar DINE, aprobar endpoints, integrar App Insights/LAW en AMPLS, revisar rutas y Defender. Guardar el valor de `securityResourceIds` en JSON fuera de Git y ejecutar `python3 scripts/check_security.py --resources /ruta/segura/recursos.json`. Incorporar IP reales de Function/Cosmos en parámetros.
+4. Esperar DINE, aprobar endpoints, integrar LAW en AMPLS y revisar Defender. Plataforma configura manualmente rutas y Virtual WAN. Guardar el valor de `securityResourceIds` en JSON fuera de Git y ejecutar `python3 scripts/check_security.py --resources /ruta/segura/recursos.json`. Incorporar IP reales de Function/Cosmos en parámetros.
 5. Recuperar código/configuración, inventariar secretos por nombre y provisionarlos por un procedimiento seguro; aplicar `secretNames` solo tras existir. Migrar documentos y Cosmos con un ejecutor privado autorizado, reconciliar recuentos y contenido. Publicar paquete desde CAF por SCM privado con Entra y sin credenciales básicas.
 6. Seleccionar explícitamente modelos, validar cuotas y API Batch; desplegarlos manteniendo la Function detenida. Verificar propagación RBAC. Los recursos son incrementales: omitir un modelo o un permiso de la plantilla **no los elimina**.
 7. Registrar evidencia real de las comprobaciones `*Verified`, identidad de usuarios/servicios permitidos, aprobación y análisis de archivos. Activar en una ventana controlada y probar API, Durable, carga/descarga, OCR, lotes, persistencia, telemetría y rechazo de accesos. Solo después cambiar consumidores/DNS/APIM corporativo.

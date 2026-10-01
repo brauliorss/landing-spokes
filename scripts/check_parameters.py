@@ -20,12 +20,14 @@ def check(p):
     for key,old in [('functionAppName','fa-mvp-analisisdec-cr'),('planName','appsp-mvp-analisisdec-cr'),('storageAccountName','safamvpanalisisdeccr'),('businessStorageAccountName','samvpanalisisdeccr'),('cosmosAccountName','cd-mvp-analisisdec-cr'),('openAiAccountName','oai-mvp-analisisdec-cr'),('documentIntelligenceAccountName','di-mvp-analisisdec-cr'),('keyVaultName','kv-mvp-analisisdec-cr')]:
         require(bool(p.get(key)) and p[key].lower()!=old,f'{key}: usar nombre nuevo para migración paralela.')
     require(bool(re.fullmatch(r'[a-z0-9]{3,24}',p.get('storageAccountName',''))),'Nombre Storage inválido.')
-    for key,kind in [('routeTableResourceId','Microsoft.Network/routeTables'),('logAnalyticsWorkspaceResourceId','Microsoft.OperationalInsights/workspaces')]:
+    for key,kind in [('logAnalyticsWorkspaceResourceId','Microsoft.OperationalInsights/workspaces')]:
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/'+re.escape(kind)+r'/[^/]+',p.get(key,''))),f'{key}: ID completo requerido.')
     zones=p.get('privateDnsZoneResourceIds',{})
-    require(set(zones)=={'blob','queue','table','sites','cosmosSql','cognitiveServicesAccount','keyVault'},'Definir todas las zonas DNS privadas de ANALISISDEC.')
+    require(set(zones)=={'blob','queue','table','sites','cosmosSql','cognitiveServicesAccount','openAi','keyVault'},'Definir todas las zonas DNS privadas de ANALISISDEC.')
+    expected_zones={'blob':'privatelink.blob.core.windows.net','queue':'privatelink.queue.core.windows.net','table':'privatelink.table.core.windows.net','sites':'privatelink.azurewebsites.net','cosmosSql':'privatelink.documents.azure.com','cognitiveServicesAccount':'privatelink.cognitiveservices.azure.com','openAi':'privatelink.openai.azure.com','keyVault':'privatelink.vaultcore.azure.net'}
     for service,zone_id in zones.items():
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/[^/]+',zone_id,re.I)),f'Zona DNS de {service}: usar ID completo en RG-PRIVATEDNS-PR.')
+        require(zone_id.lower().endswith('/'+expected_zones.get(service,'').lower()),f'Zona DNS de {service}: nombre privado incorrecto.')
     if p.get('actionGroupResourceId'):
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.Insights/actionGroups/[^/]+',p['actionGroupResourceId'])),'Action Group: ID inválido.')
     require(bool(p.get('siemAuthorizationRuleId'))==bool(p.get('siemEventHubName')),'SIEM: proporcionar ID y nombre juntos.')
