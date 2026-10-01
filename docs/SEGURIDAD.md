@@ -4,7 +4,7 @@
 
 | Control | Implementado en Bicep | Validación pendiente / responsable |
 | --- | --- | --- |
-| Clasificación | Etiqueta `DataClassification` obligatoria mediante contrato | Dueño de datos y Seguridad determinan sensibilidad, residencia y retención |
+| Clasificación | No se impone una etiqueta `DataClassification` desde esta plantilla | Dueño de datos y Seguridad determinan sensibilidad, residencia y retención fuera del despliegue |
 | Red | NSG por subred, endpoints privados y acceso público deshabilitado; sin tabla de rutas o conexión al hub | Plataforma: rutas, DNS/DINE, Virtual WAN, VPN y firewall después del despliegue |
 | Identidad | Entra obligatorio, respuesta 401 sin autenticación, lista de object IDs; identidad administrada para datos | Aplicación: autorización por operación; Identidad: registro, roles, PIM y ciclo de vida |
 | Cifrado | HTTPS/TLS 1.2; cifrado administrado por Azure en reposo; Storage sin claves compartidas | Clasificación determina si se necesitan CMK u otros controles; no se configura CMK por defecto |

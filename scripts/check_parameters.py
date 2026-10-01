@@ -15,7 +15,7 @@ def check(p):
     # Nunca devolver los valores del objeto secure applicationSettings.
     public={k:v for k,v in p.items() if k != 'applicationSettings'}
     require(not re.search(r'PENDIENTE|REPLACE|REEMPLAZAR|00000000-0000-0000-0000-000000000000',json.dumps(public),re.I),'Completar marcadores corporativos.')
-    for key in ('iniciativa','DataClassification','OpsDept','UserDept'): require(bool(p.get('tags',{}).get(key)),f'Etiqueta {key} requerida.')
+    for key in ('iniciativa','OpsDept','UserDept'): require(bool(p.get('tags',{}).get(key)),f'Etiqueta {key} requerida.')
     require(p.get('tags',{}).get('OpsDept')=='DTI','Etiqueta OpsDept debe ser DTI.')
     for key,old in [('functionAppName','fa-mvp-analisisdec-cr'),('planName','appsp-mvp-analisisdec-cr'),('storageAccountName','safamvpanalisisdeccr'),('businessStorageAccountName','samvpanalisisdeccr'),('cosmosAccountName','cd-mvp-analisisdec-cr'),('openAiAccountName','oai-mvp-analisisdec-cr'),('documentIntelligenceAccountName','di-mvp-analisisdec-cr'),('keyVaultName','kv-mvp-analisisdec-cr')]:
         require(bool(p.get(key)) and p[key].lower()!=old,f'{key}: usar nombre nuevo para migración paralela.')
