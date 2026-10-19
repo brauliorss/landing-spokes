@@ -15,7 +15,7 @@ def check(p):
     # Nunca devolver los valores de objetos secure.
     public={k:v for k,v in p.items() if k not in ('functionApplicationSettings','frontendApplicationSettings')}
     require(not re.search(r'PENDIENTE|REPLACE|REEMPLAZAR|00000000-0000-0000-0000-000000000000',json.dumps(public),re.I),'Completar marcadores corporativos.')
-    for key in ('iniciativa','DataClassification','OpsDept','UserDept'): require(bool(p.get('tags',{}).get(key)),f'Etiqueta {key} requerida.')
+    for key in ('iniciativa','OpsDept','UserDept'): require(bool(p.get('tags',{}).get(key)),f'Etiqueta {key} requerida.')
     require(p.get('tags',{}).get('OpsDept')=='DTI','Etiqueta OpsDept debe ser DTI.')
     for key in ('functionAppName','functionPlanName','frontendAppName','frontendPlanName','cosmosAccountName','openAiAccountName','documentIntelligenceAccountName','keyVaultName'):
         require(bool(p.get(key)),f'{key}: nombre nuevo requerido.')

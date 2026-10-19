@@ -40,7 +40,7 @@ param allowedOrigins = []
 param activateFunctionApp = false
 param activateFrontendApp = false
 
-param tags = { iniciativa: 'SMARTREVIEW', administradoPor: 'Bicep', DataClassification: 'PENDIENTE-CLASIFICACION', OpsDept: 'DTI', UserDept: 'PENDIENTE-AREA-FUNCIONAL' }
+param tags = { iniciativa: 'SMARTREVIEW', administradoPor: 'Bicep', OpsDept: 'DTI', UserDept: 'PENDIENTE-AREA-FUNCIONAL' }
 param apiClientPrefixes = []
 param operatorPrefixes = []
 param monitorPrefixes = []
