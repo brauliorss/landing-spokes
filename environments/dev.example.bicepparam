@@ -30,8 +30,7 @@ param privateDnsZoneResourceIds = {
   sites: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net'
   cosmosSql: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.documents.azure.com'
   openAi: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com'
-  // El ID recibido usa Microsoft.Network/dnszones. Confirmar una zona privateDnsZones antes de desplegar.
-  cognitiveServicesAccount: 'PENDIENTE-ID-ZONA-PRIVADA-COGNITIVE-SERVICES'
+  cognitiveServicesAccount: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
   keyVault: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net'
 }
 
