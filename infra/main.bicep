@@ -13,7 +13,6 @@ param functionPlanName string
 @maxLength(60)
 param frontendAppName string
 param frontendPlanName string
-param applicationInsightsName string
 @minLength(3)
 @maxLength(24)
 param hostStorageAccountName string
@@ -35,10 +34,8 @@ param subnetPrefixes {
   functionsIntegration: string
   frontendIntegration: string
 }
-@description('ID completo de una tabla de rutas corporativa existente; la plantilla no modifica sus reglas.')
-@minLength(1)
-param routeTableResourceId string
-param logAnalyticsWorkspaceResourceId string
+@description('true únicamente para crear la red inicial. Usar false después para conservar rutas y asociaciones manuales de Operaciones. Desplegar en modo Incremental.')
+param provisionNetwork bool
 @description('IDs de zonas DNS privadas centralizadas. No se crean zonas ni reglas de reenvío.')
 param privateDnsZoneResourceIds {
   blob: string
@@ -94,7 +91,8 @@ param inventoryVerified bool = false
 param networkVerified bool = false
 param defenderVerified bool = false
 param siemVerified bool = false
-param monitoringPrivateLinkVerified bool = false
+@description('Confirmar recepción de telemetría y alertas operativas en Dynatrace para ambas aplicaciones antes de activarlas.')
+param dynatraceVerified bool = false
 param applicationVerified bool = false
 param securityApprovalId string = ''
 param processesUntrustedFiles bool = true
@@ -103,14 +101,11 @@ param hostUsesTables bool = false
 param hostUsesBlobTriggers bool = false
 param hostUsesDurableStorage bool = true
 
-@description('Regla Send de un namespace Event Hub autorizado para el SIEM.')
+@description('ID de política del namespace Event Hub autorizado para logs, con Manage, Send y Listen. No introducir claves.')
 @minLength(1)
 param siemAuthorizationRuleId string
 @minLength(1)
 param siemEventHubName string
-param actionGroupResourceId string = ''
-@minValue(1)
-param requestsAlertThreshold int = 10000
 
 var businessContainerNames = ['basedocuments', 'resoluciones', 'documents', 'batchs-gpt-temporal', 'outputs']
 var cosmosDatabaseName = 'contracts-dco-db'
@@ -119,36 +114,32 @@ var cosmosContainerNames = ['contracts', 'settings']
 module contracts './modules/contracts.bicep' = {
   name: 'smartreview-contratos'
   params: {
+    validNetwork: any(!provisionNetwork || (!networkVerified && !activateFunctionApp && !activateFrontendApp))
     validSecurity: any(endsWith(string(vnetAddressPrefixes[0]), '/24') && hostStorageAccountName != businessStorageAccountName && !contains(['rg-poc-revisioncontratos-cr', 'rg-poc-analisisdec-cr', 'rg-poc-idatafactory-cr'], toLower(resourceGroup().name)) && (empty(models) || modelsApproved) && !empty(tags.?iniciativa ?? '') && !empty(tags.?DataClassification ?? '') && tags.?OpsDept == 'DTI' && !empty(tags.?UserDept ?? '') && empty(filter(allowedOrigins, origin => contains(origin, '*'))) && !empty(siemAuthorizationRuleId) && !empty(siemEventHubName))
     validSettings: any(empty(filter(items(functionApplicationSettings), setting => startsWith(toLower(setting.key), 'azurewebjobsstorage') || contains(['functions_worker_runtime', 'functions_extension_version', 'applicationinsights_connection_string'], toLower(setting.key)))))
-    validActivation: any((!activateFunctionApp || (!empty(models) && (batchEnabled || empty(filter(models, model => contains(model.sku, 'Batch')))) && !empty(cosmosPrivateIps) && !empty(functionPrivateIps) && inventoryVerified && networkVerified && defenderVerified && siemVerified && monitoringPrivateLinkVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(apiClientPrefixes) && !empty(monitorPrefixes) && !empty(actionGroupResourceId) && (!processesUntrustedFiles || fileScanningVerified))) && (!activateFrontendApp || (!empty(frontendPrivateIps) && inventoryVerified && networkVerified && siemVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(apiClientPrefixes))))
+    validActivation: any((!activateFunctionApp || (!empty(models) && (batchEnabled || empty(filter(models, model => contains(model.sku, 'Batch')))) && !empty(cosmosPrivateIps) && !empty(functionPrivateIps) && inventoryVerified && networkVerified && defenderVerified && siemVerified && dynatraceVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(apiClientPrefixes) && (!processesUntrustedFiles || fileScanningVerified))) && (!activateFrontendApp || (!empty(frontendPrivateIps) && inventoryVerified && networkVerified && siemVerified && dynatraceVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(apiClientPrefixes))))
   }
 }
 
 module network './modules/network.bicep' = {
   name: 'smartreview-red'
-  params: { location: location, tags: tags, vnetName: vnetName, vnetAddressPrefixes: vnetAddressPrefixes, subnetPrefixes: subnetPrefixes, routeTableResourceId: routeTableResourceId, apiClientPrefixes: apiClientPrefixes, operatorPrefixes: operatorPrefixes, monitorPrefixes: monitorPrefixes, functionPrivateIps: functionPrivateIps, frontendPrivateIps: frontendPrivateIps, cosmosPrivateIps: cosmosPrivateIps, extraEgress: extraEgress }
+  params: { location: location, tags: tags, vnetName: vnetName, vnetAddressPrefixes: vnetAddressPrefixes, subnetPrefixes: subnetPrefixes, provisionNetwork: provisionNetwork, apiClientPrefixes: apiClientPrefixes, operatorPrefixes: operatorPrefixes, monitorPrefixes: monitorPrefixes, functionPrivateIps: functionPrivateIps, frontendPrivateIps: frontendPrivateIps, cosmosPrivateIps: cosmosPrivateIps, extraEgress: extraEgress }
   dependsOn: [contracts]
 }
 
 module hostStorage './modules/storage.bicep' = {
   name: 'smartreview-storage-host'
-  params: { location: location, tags: tags, storageAccountName: hostStorageAccountName, skuName: 'Standard_LRS', containerNames: ['azure-webjobs-hosts', 'azure-webjobs-secrets'], logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
+  params: { location: location, tags: tags, storageAccountName: hostStorageAccountName, skuName: 'Standard_LRS', containerNames: ['azure-webjobs-hosts', 'azure-webjobs-secrets'], siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
   dependsOn: [contracts]
 }
 module businessStorage './modules/storage.bicep' = {
   name: 'smartreview-storage-datos'
-  params: { location: location, tags: tags, storageAccountName: businessStorageAccountName, skuName: 'Standard_RAGRS', containerNames: businessContainerNames, logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
+  params: { location: location, tags: tags, storageAccountName: businessStorageAccountName, skuName: 'Standard_RAGRS', containerNames: businessContainerNames, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
   dependsOn: [contracts]
 }
 module services './modules/services.bicep' = {
   name: 'smartreview-servicios'
-  params: { location: location, tags: tags, cosmosName: cosmosAccountName, cosmosDatabaseName: cosmosDatabaseName, cosmosContainerNames: cosmosContainerNames, openAiName: openAiAccountName, documentName: documentIntelligenceAccountName, vaultName: keyVaultName, models: models, workspaceId: logAnalyticsWorkspaceResourceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
-  dependsOn: [contracts]
-}
-module applicationInsights './modules/application-insights.bicep' = {
-  name: 'smartreview-telemetria'
-  params: { name: applicationInsightsName, location: location, tags: tags, workspaceResourceId: logAnalyticsWorkspaceResourceId }
+  params: { location: location, tags: tags, cosmosName: cosmosAccountName, cosmosDatabaseName: cosmosDatabaseName, cosmosContainerNames: cosmosContainerNames, openAiName: openAiAccountName, documentName: documentIntelligenceAccountName, vaultName: keyVaultName, models: models, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
   dependsOn: [contracts]
 }
 
@@ -171,12 +162,12 @@ module serviceEndpoints './modules/private-endpoint.bicep' = [for (target, index
 
 module runtime './modules/function-app.bicep' = {
   name: 'smartreview-backend'
-  params: { location: location, tags: tags, planName: functionPlanName, functionAppName: functionAppName, hostStorageAccountName: hostStorage.outputs.name, integrationSubnetResourceId: network.outputs.functionsIntegrationSubnetId, tenantId: tenantId, authenticationClientId: functionAuthenticationClientId, allowedPrincipalIds: allowedPrincipalIds, actionGroupResourceId: actionGroupResourceId, requestsAlertThreshold: requestsAlertThreshold, logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName, applicationInsightsConnectionString: applicationInsights.outputs.connectionString, applicationSettings: functionApplicationSettings, allowedOrigins: allowedOrigins, enabled: activateFunctionApp }
+  params: { location: location, tags: tags, planName: functionPlanName, functionAppName: functionAppName, hostStorageAccountName: hostStorage.outputs.name, integrationSubnetResourceId: network.outputs.functionsIntegrationSubnetId, tenantId: tenantId, authenticationClientId: functionAuthenticationClientId, allowedPrincipalIds: allowedPrincipalIds, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName, applicationSettings: functionApplicationSettings, allowedOrigins: allowedOrigins, enabled: activateFunctionApp }
   dependsOn: [hostStorageEndpoints, serviceEndpoints]
 }
 module frontend './modules/web-app.bicep' = {
   name: 'smartreview-frontend'
-  params: { location: location, tags: tags, planName: frontendPlanName, webAppName: frontendAppName, integrationSubnetResourceId: network.outputs.frontendIntegrationSubnetId, tenantId: tenantId, authenticationClientId: frontendAuthenticationClientId, allowedPrincipalIds: allowedPrincipalIds, logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName, applicationSettings: frontendApplicationSettings, enabled: activateFrontendApp }
+  params: { location: location, tags: tags, planName: frontendPlanName, webAppName: frontendAppName, integrationSubnetResourceId: network.outputs.frontendIntegrationSubnetId, tenantId: tenantId, authenticationClientId: frontendAuthenticationClientId, allowedPrincipalIds: allowedPrincipalIds, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName, applicationSettings: frontendApplicationSettings, enabled: activateFrontendApp }
   dependsOn: [serviceEndpoints]
 }
 module functionEndpoint './modules/private-endpoint.bicep' = {
@@ -204,4 +195,4 @@ output frontendAppResourceId string = frontend.outputs.resourceId
 output frontendHostname string = frontend.outputs.hostname
 output vnetResourceId string = network.outputs.vnetId
 output serviceConnections object = services.outputs.connections
-output securityResourceIds object = { hostStorage: hostStorage.outputs.resourceId, businessStorage: businessStorage.outputs.resourceId, functionApp: runtime.outputs.resourceId, frontendApp: frontend.outputs.resourceId, cosmos: services.outputs.cosmosId, openAi: services.outputs.openAiId, documentIntelligence: services.outputs.documentIntelligenceId, vault: services.outputs.vaultId, applicationInsights: applicationInsights.outputs.resourceId }
+output securityResourceIds object = { hostStorage: hostStorage.outputs.resourceId, businessStorage: businessStorage.outputs.resourceId, functionApp: runtime.outputs.resourceId, frontendApp: frontend.outputs.resourceId, cosmos: services.outputs.cosmosId, openAi: services.outputs.openAiId, documentIntelligence: services.outputs.documentIntelligenceId, vault: services.outputs.vaultId }

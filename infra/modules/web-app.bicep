@@ -8,7 +8,6 @@ param integrationSubnetResourceId string
 param tenantId string
 param authenticationClientId string
 param allowedPrincipalIds string[]
-param logAnalyticsWorkspaceResourceId string
 param siemAuthorizationRuleId string
 param siemEventHubName string
 @secure()
@@ -128,7 +127,6 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   name: 'auditoria-caf'
   scope: webApp
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
     eventHubAuthorizationRuleId: siemAuthorizationRuleId
     eventHubName: siemEventHubName
     logs: [

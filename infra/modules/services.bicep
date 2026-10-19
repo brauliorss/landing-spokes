@@ -7,20 +7,19 @@ param vaultName string
 param cosmosDatabaseName string
 param cosmosContainerNames string[]
 param models array
-param workspaceId string
 param siemAuthorizationRuleId string
 param siemEventHubName string
 module cosmos './cosmos-db.bicep' = {
   name: 'cosmos-smartreview'
-  params: { location: location, tags: tags, accountName: cosmosName, databaseName: cosmosDatabaseName, containerNames: cosmosContainerNames, logAnalyticsWorkspaceResourceId: workspaceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
+  params: { location: location, tags: tags, accountName: cosmosName, databaseName: cosmosDatabaseName, containerNames: cosmosContainerNames, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
 }
 module openAi './cognitive-account.bicep' = {
   name: 'openai-smartreview'
-  params: { location: location, tags: tags, accountName: openAiName, kind: 'OpenAI', modelDeployments: models, logAnalyticsWorkspaceResourceId: workspaceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
+  params: { location: location, tags: tags, accountName: openAiName, kind: 'OpenAI', modelDeployments: models, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
 }
 module document './cognitive-account.bicep' = {
   name: 'documentos-smartreview'
-  params: { location: location, tags: tags, accountName: documentName, kind: 'FormRecognizer', modelDeployments: [], logAnalyticsWorkspaceResourceId: workspaceId, siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
+  params: { location: location, tags: tags, accountName: documentName, kind: 'FormRecognizer', modelDeployments: [], siemAuthorizationRuleId: siemAuthorizationRuleId, siemEventHubName: siemEventHubName }
 }
 resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: vaultName
@@ -41,9 +40,8 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   name: 'auditoria-caf'
   scope: vault
   properties: {
-    workspaceId: workspaceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [{ categoryGroup: 'allLogs', enabled: true }]
   }
 }

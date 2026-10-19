@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-KINDS={'hostStorage':'Microsoft.Storage/storageAccounts','businessStorage':'Microsoft.Storage/storageAccounts','functionApp':'Microsoft.Web/sites','frontendApp':'Microsoft.Web/sites','cosmos':'Microsoft.DocumentDB/databaseAccounts','openAi':'Microsoft.CognitiveServices/accounts','documentIntelligence':'Microsoft.CognitiveServices/accounts','vault':'Microsoft.KeyVault/vaults','applicationInsights':'Microsoft.Insights/components'}
+KINDS={'hostStorage':'Microsoft.Storage/storageAccounts','businessStorage':'Microsoft.Storage/storageAccounts','functionApp':'Microsoft.Web/sites','frontendApp':'Microsoft.Web/sites','cosmos':'Microsoft.DocumentDB/databaseAccounts','openAi':'Microsoft.CognitiveServices/accounts','documentIntelligence':'Microsoft.CognitiveServices/accounts','vault':'Microsoft.KeyVault/vaults'}
 
 def get(path):
     r=subprocess.run(['az','rest','--method','get','--url','https://management.azure.com'+path,'--output','json','--only-show-errors'],capture_output=True,text=True)

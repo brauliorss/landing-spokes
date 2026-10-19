@@ -10,7 +10,6 @@ param storageAccountName string
 param skuName string = 'Standard_LRS'
 param containerNames array = []
 param isHnsEnabled bool = false
-param logAnalyticsWorkspaceResourceId string
 param siemAuthorizationRuleId string
 param siemEventHubName string
 
@@ -69,9 +68,8 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   name: 'send-to-central-law'
   scope: account
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     metrics: [
       {
         category: 'AllMetrics'
@@ -88,9 +86,8 @@ resource blobDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previ
   name: 'send-to-central-law'
   scope: blobService
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [
       {
         categoryGroup: 'allLogs'
@@ -114,9 +111,8 @@ resource queueDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-prev
   name: 'auditoria-datos-caf'
   scope: queueService
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [{ categoryGroup: 'allLogs', enabled: true }]
   }
 }
@@ -128,9 +124,8 @@ resource tableDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-prev
   name: 'auditoria-datos-caf'
   scope: tableService
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [{ categoryGroup: 'allLogs', enabled: true }]
   }
 }

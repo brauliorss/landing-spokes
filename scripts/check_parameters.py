@@ -17,19 +17,17 @@ def check(p):
     require(not re.search(r'PENDIENTE|REPLACE|REEMPLAZAR|00000000-0000-0000-0000-000000000000',json.dumps(public),re.I),'Completar marcadores corporativos.')
     for key in ('iniciativa','DataClassification','OpsDept','UserDept'): require(bool(p.get('tags',{}).get(key)),f'Etiqueta {key} requerida.')
     require(p.get('tags',{}).get('OpsDept')=='DTI','Etiqueta OpsDept debe ser DTI.')
-    for key in ('functionAppName','functionPlanName','frontendAppName','frontendPlanName','applicationInsightsName','cosmosAccountName','openAiAccountName','documentIntelligenceAccountName','keyVaultName'):
+    for key in ('functionAppName','functionPlanName','frontendAppName','frontendPlanName','cosmosAccountName','openAiAccountName','documentIntelligenceAccountName','keyVaultName'):
         require(bool(p.get(key)),f'{key}: nombre nuevo requerido.')
     require(bool(re.fullmatch(r'[a-z0-9]{3,24}',p.get('hostStorageAccountName',''))),'Nombre Storage del host inválido.')
-    for key,kind in [('routeTableResourceId','Microsoft.Network/routeTables'),('logAnalyticsWorkspaceResourceId','Microsoft.OperationalInsights/workspaces')]:
-        require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/'+re.escape(kind)+r'/[^/]+',p.get(key,''))),f'{key}: ID completo requerido.')
     zones=p.get('privateDnsZoneResourceIds',{})
     require(set(zones)=={'blob','queue','table','sites','cosmosSql','openAi','cognitiveServicesAccount','keyVault'},'Definir todas las zonas DNS privadas de Smart Review.')
     for service,zone_id in zones.items():
         require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/[^/]+',zone_id,re.I)),f'Zona DNS de {service}: usar ID completo en RG-PRIVATEDNS-PR.')
-    if p.get('actionGroupResourceId'):
-        require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.Insights/actionGroups/[^/]+',p['actionGroupResourceId'])),'Action Group: ID inválido.')
     require(bool(p.get('siemAuthorizationRuleId')) and bool(p.get('siemEventHubName')),'SIEM: ID y nombre son obligatorios.')
-    require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.EventHub/namespaces/[^/]+/authorizationRules/[^/]+',p.get('siemAuthorizationRuleId',''))),'SIEM: ID de regla del namespace inválido.')
+    require(bool(re.fullmatch(r'/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[^/]+/providers/Microsoft.EventHub/namespaces/[^/]+/authorizationRules/[^/]+',p.get('siemAuthorizationRuleId',''),re.I)),'SIEM: ID de regla del namespace inválido.')
+    require(type(p.get('provisionNetwork')) is bool,'provisionNetwork: indicar true para crear la red o false para conservarla.')
+    require(not p.get('provisionNetwork') or not any(p.get(k,False) for k in ('networkVerified','activateFunctionApp','activateFrontendApp')),'No recrear la red después de verificarla ni durante la activación; usar provisionNetwork=false.')
     nets={}
     try:
         vnets=[ipaddress.IPv4Network(n,strict=True) for n in p['vnetAddressPrefixes']]
@@ -53,12 +51,12 @@ def check(p):
                 if key in ('functionPrivateIps','frontendPrivateIps','cosmosPrivateIps') and 'privateEndpoints' in nets:
                     pe=nets['privateEndpoints'];require(n.subnet_of(pe) and int(n.network_address)-int(pe.network_address)>=4 and n.network_address!=pe.broadcast_address,'IP Function fuera de endpoints o reservada.')
             except (ValueError,TypeError):errors.append(f'{key}: IP/CIDR inválido.')
-    for flag in ('activateFunctionApp','activateFrontendApp','inventoryVerified','networkVerified','defenderVerified','siemVerified','monitoringPrivateLinkVerified','applicationVerified','processesUntrustedFiles','fileScanningVerified','hostUsesTables','hostUsesBlobTriggers','hostUsesDurableStorage'):
+    for flag in ('activateFunctionApp','activateFrontendApp','inventoryVerified','networkVerified','defenderVerified','siemVerified','dynatraceVerified','applicationVerified','processesUntrustedFiles','fileScanningVerified','hostUsesTables','hostUsesBlobTriggers','hostUsesDurableStorage'):
         require(type(p.get(flag,False)) is bool,f'{flag}: booleano requerido.')
     if p.get('activateFunctionApp'):
-        for flag in ('inventoryVerified','networkVerified','defenderVerified','siemVerified','monitoringPrivateLinkVerified','applicationVerified'):
+        for flag in ('inventoryVerified','networkVerified','defenderVerified','siemVerified','dynatraceVerified','applicationVerified'):
             require(p.get(flag) is True,f'Activación requiere {flag}.')
-        for key in ('securityApprovalId','allowedPrincipalIds','functionPrivateIps','apiClientPrefixes','monitorPrefixes','actionGroupResourceId'):
+        for key in ('securityApprovalId','allowedPrincipalIds','functionPrivateIps','apiClientPrefixes'):
             require(bool(p.get(key)),f'Activación requiere {key}.')
         require(not p.get('processesUntrustedFiles', True) or p.get('fileScanningVerified') is True,'Verificar análisis y bloqueo de archivos no confiables antes de activar.')
     ids=p.get('allowedPrincipalIds',[])
@@ -91,7 +89,7 @@ def check(p):
         require(bool(models) and bool(p.get('cosmosPrivateIps')),'Activación requiere modelos e IP reales de Cosmos.')
         require(p.get('batchEnabled') is True or not any('Batch' in m.get('sku','') for m in models),'Modelos Batch requieren permisos Batch.')
     if p.get('activateFrontendApp'):
-        for flag in ('inventoryVerified','networkVerified','siemVerified','applicationVerified'):
+        for flag in ('inventoryVerified','networkVerified','siemVerified','dynatraceVerified','applicationVerified'):
             require(p.get(flag) is True,f'Activación del frontend requiere {flag}.')
         for key in ('securityApprovalId','allowedPrincipalIds','frontendPrivateIps','apiClientPrefixes'):
             require(bool(p.get(key)),f'Activación del frontend requiere {key}.')

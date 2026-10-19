@@ -6,7 +6,6 @@ param functionAppName = 'func-smartreview-eus-pr'
 param functionPlanName = 'asp-smartreview-api-eus-pr'
 param frontendAppName = 'app-smartreview-eus-pr'
 param frontendPlanName = 'asp-smartreview-web-eus-pr'
-param applicationInsightsName = 'appi-smartreview-eus-pr'
 param hostStorageAccountName = 'stsmartreviewhosteuspr'
 param businessStorageAccountName = 'stsmartreviewdataeuspr'
 param cosmosAccountName = 'cosmos-smartreview-eus-pr'
@@ -21,8 +20,7 @@ param subnetPrefixes = {
   functionsIntegration: 'PENDIENTE-IPAM'
   frontendIntegration: 'PENDIENTE-IPAM'
 }
-param routeTableResourceId = 'PENDIENTE-ID-TABLA-CAF'
-param logAnalyticsWorkspaceResourceId = 'PENDIENTE-ID-LOG-ANALYTICS'
+param provisionNetwork = true
 param privateDnsZoneResourceIds = {
   blob: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net'
   queue: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.queue.core.windows.net'
@@ -55,12 +53,11 @@ param inventoryVerified = false
 param networkVerified = false
 param defenderVerified = false
 param siemVerified = false
-param monitoringPrivateLinkVerified = false
+param dynatraceVerified = false
 param applicationVerified = false
 param securityApprovalId = ''
 param processesUntrustedFiles = true
 param fileScanningVerified = false
-param actionGroupResourceId = ''
 param siemAuthorizationRuleId = 'PENDIENTE-ID-REGLA-EVENT-HUB-SIEM'
 param siemEventHubName = 'PENDIENTE-NOMBRE-EVENT-HUB-SIEM'
 

@@ -13,12 +13,8 @@ param integrationSubnetResourceId string
 param tenantId string
 param authenticationClientId string
 param allowedPrincipalIds array
-param actionGroupResourceId string
-param requestsAlertThreshold int
-param logAnalyticsWorkspaceResourceId string
 param siemAuthorizationRuleId string
 param siemEventHubName string
-param applicationInsightsConnectionString string
 
 resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: planName
@@ -66,7 +62,6 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       appSettings: [for setting in items(union(applicationSettings, {
         AzureWebJobsStorage__accountName: hostStorageAccountName
         AzureWebJobsStorage__credential: 'managedidentity'
-        APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsightsConnectionString
         FUNCTIONS_EXTENSION_VERSION: '~4'
         FUNCTIONS_WORKER_RUNTIME: 'python'
       })): {
@@ -133,9 +128,8 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   name: 'send-to-central-law'
   scope: functionApp
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [
       {
         categoryGroup: 'allLogs'
@@ -155,24 +149,3 @@ output resourceId string = functionApp.id
 output name string = functionApp.name
 output hostname string = '${functionApp.name}.azurewebsites.net'
 output principalId string = functionApp.identity.principalId
-
-resource operationalAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [for alert in [
-  { name: 'errores-http', metric: 'Http5xx', threshold: 5, severity: 2 }
-  { name: 'volumen-solicitudes', metric: 'Requests', threshold: requestsAlertThreshold, severity: 3 }
-]: if (!empty(actionGroupResourceId)) {
-  name: '${functionAppName}-${alert.name}'
-  location: 'global'
-  tags: tags
-  properties: {
-    enabled: true
-    severity: alert.severity
-    scopes: [functionApp.id]
-    evaluationFrequency: 'PT1M'
-    windowSize: 'PT5M'
-    criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-      allOf: [{ name: alert.name, metricName: alert.metric, metricNamespace: 'Microsoft.Web/sites', operator: 'GreaterThan', threshold: alert.threshold, timeAggregation: 'Total', criterionType: 'StaticThresholdCriterion' }]
-    }
-    actions: [{ actionGroupId: actionGroupResourceId }]
-  }
-}]
