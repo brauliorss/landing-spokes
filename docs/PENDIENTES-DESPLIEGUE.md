@@ -1,6 +1,6 @@
 # Preparación del despliegue de Smart Review
 
-Revisión del 19 de octubre de 2026. Se conservaron siete IDs de zonas DNS privadas suministrados y los nombres de recursos existentes. La zona privada de Document Intelligence queda pendiente de confirmación. La configuración todavía no está lista para desplegar. Completar la copia local `environments/prod.bicepparam`, excluida de Git.
+Revisión del 19 de octubre de 2026. Se conservaron siete IDs de zonas DNS privadas suministrados y se propusieron nombres de recursos con la convención `eus-pr`. La zona privada de Document Intelligence queda pendiente de confirmación. La configuración todavía no está lista para desplegar. Completar la copia local `environments/prod.bicepparam`, excluida de Git.
 
 ## DNS central
 
@@ -14,7 +14,7 @@ Esta revisión es local y no comprueba la existencia de las zonas en Azure. Plat
 
 | Dato o decisión | Responsable | Pendiente |
 | --- | --- | --- |
-| Destino y nombres | Plataforma | Confirmar suscripción y RG nuevo de destino. Los nombres se conservaron, pero el archivo disponible todavía contiene `PENDIENTE`, incluidos los dos Storage; sustituir esos marcadores por los nombres acordados. |
+| Destino y nombres | Plataforma | Confirmar suscripción y RG nuevo de destino. Los nombres de Smart Review utilizan `eus-pr`; los dos Storage utilizan el mismo sufijo sin guiones. Confirmar disponibilidad global antes de desplegar. |
 | Direccionamiento | Redes / IPAM | Entregar una VNet /24 y los rangos de las tres subredes. |
 | Rutas | Redes | Entregar el ID de la tabla de rutas corporativa existente y confirmar compatibilidad con la nueva red. |
 | Monitoreo | Plataforma | Entregar el ID del Log Analytics central. |
