@@ -1,14 +1,14 @@
 # Preparación del despliegue de Smart Review
 
-Revisión del 19 de octubre de 2026. Se incorporaron las ocho zonas DNS suministradas al archivo de parámetros. Se conservaron los nombres de recursos existentes. La configuración todavía no está lista para desplegar.
+Revisión del 19 de octubre de 2026. Se conservaron siete IDs de zonas DNS privadas suministrados y los nombres de recursos existentes. La zona privada de Document Intelligence queda pendiente de confirmación. La configuración todavía no está lista para desplegar. Completar la copia local `environments/prod.bicepparam`, excluida de Git.
 
 ## DNS central
 
 Las zonas corresponden a Blob, Queue, Table, App Service, Cosmos DB, OpenAI, Document Intelligence y Key Vault, en `rg-privatedns-pr` de la suscripción `8bfde717-74c9-41c1-853f-cd61b1d8b979`.
 
-El ID recibido para `privatelink.cognitiveservices.azure.com` contenía `Microsoft.Network/dnszones`. Se configuró la ruta requerida `Microsoft.Network/privateDnsZones`. Plataforma debe confirmar que existe una zona privada con ese ID; cambiar la ruta en el archivo no crea ni convierte la zona.
+El ID recibido para `privatelink.cognitiveservices.azure.com` contiene `Microsoft.Network/dnszones`, no `Microsoft.Network/privateDnsZones`. Se dejó un marcador pendiente en ambos archivos de parámetros. Plataforma debe entregar el ID de la zona privada; cambiar la ruta en el archivo no crea ni convierte la zona.
 
-No se pudo comprobar la existencia de las zonas: la sesión de Azure disponible no reconoce esa suscripción. Plataforma debe confirmar también permisos sobre las zonas centrales, enlaces y resolución desde el spoke.
+Esta revisión es local y no comprueba la existencia de las zonas en Azure. Plataforma debe confirmar también permisos sobre las zonas centrales, enlaces y resolución desde el spoke.
 
 ## Datos pendientes para crear la infraestructura
 
