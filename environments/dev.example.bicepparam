@@ -24,14 +24,14 @@ param subnetPrefixes = {
 param routeTableResourceId = 'PENDIENTE-ID-TABLA-CAF'
 param logAnalyticsWorkspaceResourceId = 'PENDIENTE-ID-LOG-ANALYTICS'
 param privateDnsZoneResourceIds = {
-  blob: 'PENDIENTE-ID-ZONA-BLOB'
-  queue: 'PENDIENTE-ID-ZONA-QUEUE'
-  table: 'PENDIENTE-ID-ZONA-TABLE'
-  sites: 'PENDIENTE-ID-ZONA-AZUREWEBSITES'
-  cosmosSql: 'PENDIENTE-ID-ZONA-COSMOS-SQL'
-  openAi: 'PENDIENTE-ID-ZONA-OPENAI'
-  cognitiveServicesAccount: 'PENDIENTE-ID-ZONA-COGNITIVE-SERVICES'
-  keyVault: 'PENDIENTE-ID-ZONA-KEY-VAULT'
+  blob: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net'
+  queue: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.queue.core.windows.net'
+  table: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.table.core.windows.net'
+  sites: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net'
+  cosmosSql: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.documents.azure.com'
+  openAi: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com'
+  cognitiveServicesAccount: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
+  keyVault: '/subscriptions/8bfde717-74c9-41c1-853f-cd61b1d8b979/resourceGroups/rg-privatedns-pr/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net'
 }
 
 param functionAuthenticationClientId = 'PENDIENTE-REGISTRO-ENTRA-API'
