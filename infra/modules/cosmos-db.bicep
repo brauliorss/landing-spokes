@@ -4,7 +4,6 @@ param location string
 param tags object = {}
 param accountName string
 param databaseName string
-param logAnalyticsWorkspaceResourceId string
 param siemAuthorizationRuleId string
 param siemEventHubName string
 
@@ -81,9 +80,8 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   name: 'send-to-central-law'
   scope: account
   properties: {
-    workspaceId: logAnalyticsWorkspaceResourceId
-    eventHubAuthorizationRuleId: empty(siemAuthorizationRuleId) ? null : siemAuthorizationRuleId
-    eventHubName: empty(siemEventHubName) ? null : siemEventHubName
+    eventHubAuthorizationRuleId: siemAuthorizationRuleId
+    eventHubName: siemEventHubName
     logs: [
       {
         categoryGroup: 'allLogs'

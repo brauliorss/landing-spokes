@@ -20,6 +20,9 @@ var rules = [for r in selected: {
     access: r.properties.access
     protocol: r.properties.protocol
     sourcePortRange: '*'
+  }, contains(r.properties.destinationPortRanges, '*') ? {
+    destinationPortRange: '*'
+  } : {
     destinationPortRanges: r.properties.destinationPortRanges
   }, contains(lists, r.properties.sourceAddressPrefix) ? {
     sourceAddressPrefixes: lists[r.properties.sourceAddressPrefix]

@@ -4,4 +4,6 @@ param validSecurity bool
 param validSettings bool
 @allowed([true])
 param validActivation bool
-output valid bool = validSecurity && validSettings && validActivation
+@allowed([true])
+param validNetwork bool
+output valid bool = validNetwork && validSecurity && validSettings && validActivation

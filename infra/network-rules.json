@@ -15,20 +15,6 @@
       }
     },
     {
-      "name": "dns-plataforma",
-      "properties": {
-        "direction": "Outbound",
-        "access": "Allow",
-        "protocol": "*",
-        "sourceAddressPrefix": "functionsIntegration",
-        "destinationAddressPrefix": "AzurePlatformDNS",
-        "destinationPortRanges": [
-          "53"
-        ],
-        "priority": 220
-      }
-    },
-    {
       "name": "dns-azure",
       "properties": {
         "direction": "Outbound",
@@ -68,20 +54,6 @@
           "443"
         ],
         "priority": 250
-      }
-    },
-    {
-      "name": "monitor-servicio",
-      "properties": {
-        "direction": "Outbound",
-        "access": "Allow",
-        "protocol": "Tcp",
-        "sourceAddressPrefix": "functionsIntegration",
-        "destinationAddressPrefix": "AzureMonitor",
-        "destinationPortRanges": [
-          "443"
-        ],
-        "priority": 260
       }
     },
     {

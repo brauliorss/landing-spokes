@@ -5,7 +5,7 @@ param tags object = {}
 param vnetName string
 param vnetAddressPrefixes array
 param subnetPrefixes object
-param routeTableResourceId string
+param provisionNetwork bool
 param apiClientPrefixes array
 param operatorPrefixes array
 param monitorPrefixes array
@@ -45,7 +45,7 @@ module subnetNsgs './nsg.bicep' = [for (purpose, i) in ['privateEndpoints', 'fun
   }
 }]
 
-resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = if (provisionNetwork) {
   name: vnetName
   location: location
   tags: tags
@@ -57,9 +57,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
       name: subnet.name
       properties: {
         addressPrefix: subnet.prefix
-        routeTable: {
-          id: routeTableResourceId
-        }
         networkSecurityGroup: {
           id: subnetNsgs[index].outputs.id
         }
@@ -77,7 +74,8 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   }
 }
 
-output vnetId string = vnet.id
-output vnetName string = vnet.name
-output peSubnetId string = '${vnet.id}/subnets/snet-private-endpoints'
-output functionsIntegrationSubnetId string = '${vnet.id}/subnets/snet-functions-integration'
+var networkId = resourceId('Microsoft.Network/virtualNetworks', vnetName)
+output vnetId string = networkId
+output vnetName string = vnetName
+output peSubnetId string = '${networkId}/subnets/snet-private-endpoints'
+output functionsIntegrationSubnetId string = '${networkId}/subnets/snet-functions-integration'

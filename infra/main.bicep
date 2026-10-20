@@ -24,10 +24,8 @@ param subnetPrefixes {
   privateEndpoints: string
   functionsIntegration: string
 }
-@description('ID de tabla de rutas corporativa existente; no se modifica su contenido.')
-@minLength(1)
-param routeTableResourceId string
-param logAnalyticsWorkspaceResourceId string
+@description('Crear la red inicialmente; false después de entregarla a Operaciones.')
+param provisionNetwork bool
 @description('IDs completos de zonas DNS privadas centralizadas en RG-PRIVATEDNS-PR.')
 param privateDnsZoneResourceIds {
   blob: string
@@ -79,6 +77,7 @@ param inventoryVerified bool = false
 param networkVerified bool = false
 param defenderVerified bool = false
 param siemVerified bool = false
+param dynatraceVerified bool = false
 param applicationVerified bool = false
 param securityApprovalId string = ''
 @description('Declarar según inventario si la aplicación procesa archivos no confiables, incluso en almacenamiento externo.')
@@ -93,16 +92,14 @@ param hostUsesDurableStorage bool = true
 param siemAuthorizationRuleId string
 @description('Nombre del Event Hub corporativo que recibe los logs del spoke.')
 param siemEventHubName string
-param actionGroupResourceId string = ''
-@minValue(1)
-param requestsAlertThreshold int = 10000
 
 module contracts './modules/contracts.bicep' = {
   name: 'mop-contratos'
   params: {
-    validSecurity: any(endsWith(string(vnetAddressPrefixes[0]), '/24') && storageAccountName != businessStorageAccountName && toLower(resourceGroup().name) != 'rg-poc-premop-cr' && (empty(models) || modelsApproved) && !empty(tags.?iniciativa ?? '') && !empty(tags.?DataClassification ?? '') && tags.?OpsDept == 'DTI' && !empty(tags.?UserDept ?? '') && empty(filter(allowedOrigins, origin => contains(origin, '*'))) && !empty(siemAuthorizationRuleId) && !empty(siemEventHubName))
+    validNetwork: any(!provisionNetwork || (!networkVerified && !activateFunctionApp))
+    validSecurity: any(endsWith(string(vnetAddressPrefixes[0]), '/24') && storageAccountName != businessStorageAccountName && toLower(resourceGroup().name) != 'rg-poc-premop-cr' && (empty(models) || modelsApproved) && !empty(tags.?iniciativa ?? '') && tags.?OpsDept == 'DTI' && !empty(tags.?UserDept ?? '') && empty(filter(allowedOrigins, origin => contains(origin, '*'))) && !empty(siemAuthorizationRuleId) && !empty(siemEventHubName))
     validSettings: any(empty(filter(items(applicationSettings), setting => startsWith(toLower(setting.key), 'azurewebjobsstorage') || contains(['functions_worker_runtime', 'functions_extension_version', 'applicationinsights_connection_string'], toLower(setting.key)))))
-    validActivation: any(!activateFunctionApp || (!empty(models) && (batchEnabled || empty(filter(models, model => contains(model.sku, 'Batch')))) && !empty(cosmosPrivateIps) && inventoryVerified && networkVerified && defenderVerified && siemVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(functionPrivateIps) && !empty(apiClientPrefixes) && !empty(monitorPrefixes) && !empty(actionGroupResourceId) && (!processesUntrustedFiles || fileScanningVerified)))
+    validActivation: any(!activateFunctionApp || (!empty(models) && (batchEnabled || empty(filter(models, model => contains(model.sku, 'Batch')))) && !empty(cosmosPrivateIps) && inventoryVerified && networkVerified && defenderVerified && siemVerified && dynatraceVerified && applicationVerified && !empty(securityApprovalId) && !empty(allowedPrincipalIds) && !empty(functionPrivateIps) && !empty(apiClientPrefixes) && (!processesUntrustedFiles || fileScanningVerified)))
   }
 }
 
@@ -111,10 +108,10 @@ module network './modules/network.bicep' = {
   params: {
     location: location
     tags: tags
+    provisionNetwork: provisionNetwork
     vnetName: vnetName
     vnetAddressPrefixes: vnetAddressPrefixes
     subnetPrefixes: subnetPrefixes
-    routeTableResourceId: routeTableResourceId
     apiClientPrefixes: apiClientPrefixes
     operatorPrefixes: operatorPrefixes
     monitorPrefixes: monitorPrefixes
@@ -135,7 +132,6 @@ module storage './modules/storage.bicep' = {
       'azure-webjobs-hosts'
       'azure-webjobs-secrets'
     ]
-    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     siemAuthorizationRuleId: siemAuthorizationRuleId
     siemEventHubName: siemEventHubName
   }
@@ -167,9 +163,6 @@ module runtime './modules/function-app.bicep' = {
     tenantId: tenantId
     authenticationClientId: authenticationClientId
     allowedPrincipalIds: allowedPrincipalIds
-    actionGroupResourceId: actionGroupResourceId
-    requestsAlertThreshold: requestsAlertThreshold
-    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     siemAuthorizationRuleId: siemAuthorizationRuleId
     siemEventHubName: siemEventHubName
     applicationSettings: applicationSettings
@@ -221,7 +214,6 @@ module businessStorage './modules/storage.bicep' = {
     storageAccountName: businessStorageAccountName
     storageSku: 'Standard_RAGRS'
     containerNames: ['base-templates', 'documents']
-    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     siemAuthorizationRuleId: siemAuthorizationRuleId
     siemEventHubName: siemEventHubName
   }
@@ -236,7 +228,6 @@ module services './modules/services.bicep' = {
     openAiName: openAiAccountName
     documentName: documentIntelligenceAccountName
     models: models
-    workspaceId: logAnalyticsWorkspaceResourceId
     siemAuthorizationRuleId: siemAuthorizationRuleId
     siemEventHubName: siemEventHubName
   }

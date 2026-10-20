@@ -1,6 +1,8 @@
 using '../infra/main.bicep'
 
 // Ejemplo no desplegable: sustituir todos los PENDIENTE con datos aprobados por CAF.
+param provisionNetwork = true
+param dynatraceVerified = false
 param location = 'eastus'
 param functionAppName = 'func-mop-PENDIENTE'
 param planName = 'asp-mop-PENDIENTE'
@@ -11,8 +13,6 @@ param subnetPrefixes = {
   privateEndpoints: 'PENDIENTE-IPAM'
   functionsIntegration: 'PENDIENTE-IPAM'
 }
-param routeTableResourceId = 'PENDIENTE-ID-TABLA-CAF'
-param logAnalyticsWorkspaceResourceId = 'PENDIENTE-ID-LOG-ANALYTICS'
 param privateDnsZoneResourceIds = {
   blob: 'PENDIENTE-ID-ZONA-BLOB'
   queue: 'PENDIENTE-ID-ZONA-QUEUE'
@@ -31,7 +31,7 @@ param applicationSettings = {}
 param allowedOrigins = []
 param activateFunctionApp = false
 
-param tags = { iniciativa: 'MOP', administradoPor: 'Bicep', DataClassification: 'PENDIENTE-CLASIFICACION', OpsDept: 'DTI', UserDept: 'PENDIENTE-AREA-FUNCIONAL' }
+param tags = { iniciativa: 'MOP', administradoPor: 'Bicep', OpsDept: 'DTI', UserDept: 'PENDIENTE-AREA-FUNCIONAL' }
 param apiClientPrefixes = []
 param operatorPrefixes = []
 param monitorPrefixes = []
@@ -46,7 +46,6 @@ param applicationVerified = false
 param securityApprovalId = ''
 param processesUntrustedFiles = true
 param fileScanningVerified = false
-param actionGroupResourceId = ''
 param siemAuthorizationRuleId = 'PENDIENTE-ID-REGLA-EVENT-HUB-SIEM'
 param siemEventHubName = 'PENDIENTE-NOMBRE-EVENT-HUB-SIEM'
 

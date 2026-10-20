@@ -14,13 +14,13 @@ def rid(kind):return f'/subscriptions/{SID}/resourceGroups/caf/providers/{kind}/
 def foundation():
     zones={'blob':'privatelink.blob.core.windows.net','queue':'privatelink.queue.core.windows.net','table':'privatelink.table.core.windows.net','sites':'privatelink.azurewebsites.net','cosmosSql':'privatelink.documents.azure.com','cognitiveServicesAccount':'privatelink.cognitiveservices.azure.com','openAi':'privatelink.openai.azure.com'}
     zone_ids={service:f'/subscriptions/{SID}/resourceGroups/RG-PRIVATEDNS-PR/providers/Microsoft.Network/privateDnsZones/{name}' for service,name in zones.items()}
-    return dict(tags={'iniciativa':'MOP','DataClassification':'Interna','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-mop-new',planName='plan-mop-new',storageAccountName='stmopnew',businessStorageAccountName='stmopdocs',cosmosAccountName='cosmos-mop-new',openAiAccountName='oai-mop-new',documentIntelligenceAccountName='di-mop-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},routeTableResourceId=rid('Microsoft.Network/routeTables'),logAnalyticsWorkspaceResourceId=rid('Microsoft.OperationalInsights/workspaces'),siemAuthorizationRuleId=rid('Microsoft.EventHub/namespaces/central/authorizationRules'),siemEventHubName='siem-logs',privateDnsZoneResourceIds=zone_ids)
-def active():return dict(foundation(),models=[{'name':'approved','model':'approved-model','version':'approved-version','sku':'GlobalStandard','capacity':1}],modelsApproved=True,cosmosPrivateIps=['10.181.0.6'],fileScanningVerified=True,activateFunctionApp=True,inventoryVerified=True,networkVerified=True,defenderVerified=True,siemVerified=True,applicationVerified=True,securityApprovalId='CAF-123',allowedPrincipalIds=[SID],functionPrivateIps=['10.181.0.5'],apiClientPrefixes=['10.178.0.0/24'],monitorPrefixes=['10.179.1.4'],actionGroupResourceId=rid('Microsoft.Insights/actionGroups'))
+    return dict(tags={'iniciativa':'MOP','OpsDept':'DTI','UserDept':'Área funcional'},functionAppName='func-mop-new',planName='plan-mop-new',storageAccountName='stmopnew',businessStorageAccountName='stmopdocs',cosmosAccountName='cosmos-mop-new',openAiAccountName='oai-mop-new',documentIntelligenceAccountName='di-mop-new',vnetAddressPrefixes=['10.181.0.0/24'],subnetPrefixes={'privateEndpoints':'10.181.0.0/27','functionsIntegration':'10.181.0.64/26'},provisionNetwork=True,siemAuthorizationRuleId=rid('Microsoft.EventHub/namespaces/central/authorizationRules'),siemEventHubName='siem-logs',privateDnsZoneResourceIds=zone_ids)
+def active():return dict(foundation(),provisionNetwork=False,dynatraceVerified=True,models=[{'name':'approved','model':'approved-model','version':'approved-version','sku':'GlobalStandard','capacity':1}],modelsApproved=True,cosmosPrivateIps=['10.181.0.6'],fileScanningVerified=True,activateFunctionApp=True,inventoryVerified=True,networkVerified=True,defenderVerified=True,siemVerified=True,applicationVerified=True,securityApprovalId='CAF-123',allowedPrincipalIds=[SID],functionPrivateIps=['10.181.0.5'],apiClientPrefixes=['10.178.0.0/24'],monitorPrefixes=['10.179.1.4'])
 class Parameters(unittest.TestCase):
     def test_foundation_and_activation(self):
         self.assertEqual(checker.check(foundation()),[]);self.assertEqual(checker.check(active()),[])
     def test_no_activation_without_inventory_or_security(self):
-        for flag in ('inventoryVerified','networkVerified','defenderVerified','siemVerified','applicationVerified'):
+        for flag in ('inventoryVerified','networkVerified','defenderVerified','siemVerified','dynatraceVerified','applicationVerified'):
             self.assertTrue(checker.check(dict(active(),**{flag:False})))
     def test_models_and_private_ips(self):
         for change in [dict(modelsApproved=False),dict(cosmosPrivateIps=['10.181.0.1']),dict(models=[]),dict(models=[{'name':'batch','model':'m','version':'v','sku':'GlobalBatch','capacity':1}])]:
@@ -32,7 +32,7 @@ class Parameters(unittest.TestCase):
         self.assertTrue(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=False)))
         self.assertEqual(checker.check(dict(active(),processesUntrustedFiles=True,fileScanningVerified=True)),[])
     def test_invalid_network_and_permissions(self):
-        for key,value in [('allowedOrigins',['*']),('functionAppName','azfunc-premop-CR'),('functionPrivateIps',['10.181.0.1']),('routeTableResourceId','x'),('siemEventHubName',''),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
+        for key,value in [('allowedOrigins',['*']),('functionAppName','azfunc-premop-CR'),('functionPrivateIps',['10.181.0.1']),('provisionNetwork','x'),('siemEventHubName',''),('extraEgress',[{'purpose':'functionsIntegration','destination':'0.0.0.0/0','ports':['*'],'justification':''}])]:
             self.assertTrue(checker.check(dict(foundation(),**{key:value})))
     def test_settings_rejection_does_not_disclose_values(self):
         errors=checker.check(dict(foundation(),applicationSettings={'AZUREWEBJOBSSTORAGE__clientId':'SECRET-DO-NOT-PRINT'}))
@@ -67,8 +67,7 @@ class Template(unittest.TestCase):
         self.assertEqual(auth['globalValidation']['unauthenticatedClientAction'],'Return401')
         self.assertIn('allowedPrincipals',auth['identityProviders']['azureActiveDirectory']['validation']['defaultAuthorizationPolicy'])
     def test_data_logging_defender_and_recovery(self):
-        protection=next(r for r in self.resources if r['type']=='Microsoft.Security/defenderForStorageSettings')['properties']
-        self.assertTrue(protection['isEnabled']);self.assertFalse(protection['overrideSubscriptionLevelSettings'])
+        self.assertFalse(any(r['type']=='Microsoft.Security/defenderForStorageSettings' for r in self.resources))
         diag=[r for r in self.resources if r['type']=='Microsoft.Insights/diagnosticSettings']
         for service in ('blobServices','queueServices','tableServices'):
             self.assertTrue(any(service.lower() in json.dumps(r).lower() for r in diag))
@@ -88,7 +87,7 @@ class Template(unittest.TestCase):
         self.assertNotIn('*',str(role['properties']['permissions']))
         self.assertEqual(self.arm['parameters']['models']['defaultValue'],[])
         for account in (r for r in self.resources if r['type']=='Microsoft.CognitiveServices/accounts' and not r.get('existing')):
-            self.assertEqual(account['properties']['networkAcls']['bypass'],'None')
+            self.assertIn("'FormRecognizer'",account['properties']['networkAcls'])
             self.assertTrue(account['properties']['disableLocalAuth'])
         self.assertEqual(self.arm['resources']['serviceEndpoints']['copy']['count'],"[length(range(0, 4))]")
         self.assertIn('serviceEndpoints',str(self.arm['resources']['runtime']['dependsOn']))
@@ -102,7 +101,35 @@ class Template(unittest.TestCase):
         self.assertEqual(storage['sku']['name'],"[parameters('storageSku')]");
         self.assertEqual(self.arm['resources']['businessStorage']['properties']['parameters']['storageSku']['value'],'Standard_RAGRS');self.assertFalse(storage['properties']['allowSharedKeyAccess'])
 
+    def test_eventhub_only_and_manual_network(self):
+        for name in ('routeTableResourceId','logAnalyticsWorkspaceResourceId','actionGroupResourceId'):
+            self.assertNotIn(name,self.arm['parameters'])
+        network=next(r for r in self.resources if r['type']=='Microsoft.Network/virtualNetworks')
+        self.assertEqual(network['condition'],"[parameters('provisionNetwork')]")
+        self.assertNotIn('routeTable',json.dumps(network))
+        self.assertFalse(self.arm['parameters']['dynatraceVerified']['defaultValue'])
+        for r in self.resources:
+            self.assertNotEqual(r['type'],'Microsoft.Insights/metricAlerts')
+            if r['type']=='Microsoft.Insights/diagnosticSettings':
+                self.assertNotIn('workspaceId',r['properties'])
+                self.assertEqual(r['properties']['eventHubName'],"[parameters('siemEventHubName')]")
+
+    def test_network_lifecycle_and_dynatrace(self):
+        self.assertTrue(checker.check(dict(foundation(),networkVerified=True)))
+        self.assertTrue(checker.check(dict(active(),provisionNetwork=True)))
+        self.assertTrue(checker.check(dict(active(),dynatraceVerified=False)))
+        self.assertEqual(checker.check(dict(active(),monitorPrefixes=[])),[])
+
 class Network(unittest.TestCase):
+    def test_platform_dns_and_wildcards(self):
+        for rules in self.profiles.values():
+            for rule in rules:
+                if rule['properties']['access']=='Allow':
+                    self.assertNotIn(rule['properties']['destinationAddressPrefix'],('AzurePlatformDNS','AzurePlatformIMDS','AzurePlatformLKM'))
+        source=(ROOT/'infra/modules/nsg.bicep').read_text()
+        self.assertIn("contains(r.properties.destinationPortRanges, '*') ? {",source)
+        self.assertIn("destinationPortRange: '*'",source)
+
     profiles=json.loads((ROOT/'infra/network-rules.json').read_text())
     addresses={'functionsIntegration':['10.181.0.64/26'],'privateEndpoints':['10.181.0.0/27'],'function':['10.181.0.5'],'cosmos':['10.181.0.6'],'clients':['10.178.0.0/24'],'operators':['10.177.0.4'],'monitor':['10.179.1.4']}
     def access(self,purpose,direction,source,destination,port):
@@ -123,7 +150,6 @@ class Network(unittest.TestCase):
         self.assertEqual(self.access('privateEndpoints','Inbound','10.178.0.5','10.181.0.6',443),'Deny')
         self.assertEqual(self.access('functionsIntegration','Outbound','10.181.0.70','10.181.0.6',443),'Allow')
         self.assertEqual(self.access('functionsIntegration','Outbound','10.181.0.70','8.8.8.8',443),'Deny')
-        dns=next(r for r in self.profiles['functionsIntegration'] if r['name']=='dns-plataforma')
-        self.assertEqual(dns['properties']['destinationAddressPrefix'],'AzurePlatformDNS')
+        self.assertFalse(any(r['properties']['destinationAddressPrefix']=='AzurePlatformDNS' for r in self.profiles['functionsIntegration']))
 
 if __name__=='__main__':unittest.main()
