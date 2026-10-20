@@ -14,16 +14,16 @@ El contrato APIM y la distribución de suscripciones/workspaces que difieren ent
 
 | Recurso | Configuración | Justificación |
 | --- | --- | --- |
-| Function y plan | Linux Python 3.13, Functions ~4, B2 de una instancia, Always On; detenida por defecto | Conserva capacidad del origen, añade identidad administrada, Entra obligatorio, TLS 1.2 y deshabilita publicación básica |
+| Function y plan | Linux Python 3.13, Functions ~4, P1v4 de una instancia, Always On; detenida por defecto | Conserva capacidad del origen, añade identidad administrada, Entra obligatorio, TLS 1.2 y deshabilita publicación básica |
 | Storage host | StorageV2 Standard_LRS; Blob, Queue y Table privados; sin claves compartidas | Moderniza cuenta legacy para el nuevo host; separa estado Durable de los documentos |
 | Storage documentos | StorageV2 Standard_RAGRS, contenedores `base-templates` y `documents`, versiones y recuperación 14 días | Conserva la redundancia geográfica de lectura verificada; no degrada a LRS |
 | Cosmos DB | NoSQL serverless, Session, East US, una región sin zonas; Entra y endpoint Sql | Conserva `premop-db`, `projects` y `settings`, partición `/id`, Hash v2, índices y sin TTL; backup continuo de 7 días en la cuenta nueva |
 | OpenAI | S0 privado, autenticación local deshabilitada, identidad; modelos explícitos | Conserva uso Batch y controla su autorización sin asignar Contributor general |
 | Document Intelligence | FormRecognizer S0 privado y Entra | Conserva extracción documental; validar método de envío y SDK con red privada |
-| App Insights | Componente de carga nuevo, LAW existente, ingestión/consulta públicas deshabilitadas | El inventario no contiene observabilidad equivalente; requiere AMPLS corporativo |
+| Monitoreo | Diagnósticos hacia Event Hub y monitoreo externo en Dynatrace | Operaciones verifica recepción, alertas y protección antes de activar |
 | Red | Una VNet `/24`, dos NSG y subredes, rutas existentes y DNS de Azure | Producción no crea peering; plataforma completa la conexión Virtual WAN |
 
-RA-GRS no asegura conmutación transparente: la réplica secundaria es de lectura y la replicación geográfica es asíncrona. Esta entrega crea endpoint privado de Blob primario; no habilita lectura directa del secundario ni ensaya failover. Confirmar región secundaria/residencia de datos y diseñar conectividad/DNS para recuperación. B2 de una instancia, host LRS y Cosmos sin zonas tampoco constituyen HA zonal. Definir RTO/RPO y probar restauración antes de aceptar producción.
+RA-GRS no asegura conmutación transparente: la réplica secundaria es de lectura y la replicación geográfica es asíncrona. Esta entrega crea endpoint privado de Blob primario; no habilita lectura directa del secundario ni ensaya failover. Confirmar región secundaria/residencia de datos y diseñar conectividad/DNS para recuperación. P1v4 de una instancia, host LRS y Cosmos sin zonas tampoco constituyen HA zonal. Definir RTO/RPO y probar restauración antes de aceptar producción.
 
 ## Red `/24` y DNS
 
@@ -51,9 +51,9 @@ Modelo histórico: alias/modelo `gpt-5`, versión `2025-08-07`, modalidad `Globa
 
 ## Migración y aceptación
 
-1. Confirmar nuevo RG, nombres, clasificación, IPAM, hub, rutas, LAW, AMPLS, Action Group e identidades Entra. La plantilla rechaza `RG-POC-PreMop-CR`; el checker rechaza reutilizar nombres originales. Verificar propiedad/colisiones también en Azure.
+1. Confirmar nuevo RG, nombres, etiquetas, IPAM, conectividad manual, DNS, Event Hub e identidad Entra. La plantilla rechaza `RG-POC-PreMop-CR`; el checker rechaza reutilizar nombres originales. Verificar propiedad/colisiones también en Azure.
 2. Preparar JSON ARM real fuera de Git; ejecutar `scripts/validate.sh /ruta/parametros.json`. Luego ejecutar `az deployment group validate` y revisar `what-if` con el destino confirmado. Esos dos controles Azure todavía no se han realizado.
-3. Desplegar fundación con `activateFunctionApp=false` y `models=[]`. Crear recursos vacíos, identidades, permisos y endpoints. Esperar DINE y propagación RBAC; integrar App Insights/LAW en AMPLS y confirmar conectividad.
+3. Desplegar fundación con `activateFunctionApp=false` y `models=[]`. Crear recursos vacíos, identidades, permisos y endpoints. Verificar zone groups, enlaces DNS y propagación RBAC; integrar Dynatrace y confirmar conectividad. Cambiar provisionNetwork=false antes de que Operaciones asocie rutas manuales.
 4. Guardar el valor de `securityResourceIds` fuera de Git; ejecutar `python3 scripts/check_security.py --resources /ruta/recursos.json`. Incorporar las IP reales de Function y Cosmos, verificar Defender efectivo, malware y recepción SIEM.
 5. Recuperar y publicar código por SCM privado desde CAF con Entra, sin credenciales básicas. Migrar documentos y Cosmos con controles de integridad y copia de seguridad. No copiar colas, leases, host secrets ni historial de publicación. Controlar las orquestaciones en curso para evitar duplicidad o pérdida de trabajo.
 6. Seleccionar modelos explícitos y desplegarlos manteniendo la Function detenida. Comprobar permisos Batch, extracción documental y SDKs con identidad. Validar el bloqueo de archivos no analizados antes de enviarlos a IA.

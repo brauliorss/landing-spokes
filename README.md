@@ -2,7 +2,7 @@
 
 Infraestructura modular para migrar MOP Express sin modificar `RG-POC-PreMop-CR`. Conserva Function/Durable y actualiza su plan a P1v4 para la conectividad privada; mantiene Storage del host LRS, documentos RA-GRS, Cosmos `premop-db`, OpenAI Batch y Document Intelligence.
 
-Añade VNet `/24`, NSG, endpoints privados con zonas DNS centralizadas, Entra, permisos por recurso, diagnósticos y Defender Storage con herencia CAF. La conexión Virtual WAN de producción queda a cargo de plataforma; no crea peering, DNS personalizado, Application Insights ni IP pública.
+Añade VNet `/24`, NSG, endpoints privados con zonas DNS centralizadas, Entra, permisos por recurso, diagnósticos hacia Event Hub corporativo. La conexión Virtual WAN de producción queda a cargo de plataforma; no crea peering, DNS personalizado, Application Insights ni IP pública.
 
 El DNS Forwarding Ruleset y la conexión al Virtual WAN Hub se realizan manualmente por plataforma; no se incluyen en este Bicep.
 
@@ -14,4 +14,10 @@ La Function queda detenida y los modelos vacíos por defecto. El código de las 
 
 Validación: `scripts/validate.sh`; con JSON ARM real fuera de Git: `scripts/validate.sh /ruta/segura/parametros.json`.
 
-Estado: compilación y linter sin avisos; 15 pruebas locales correctas. Inventario del origen verificado mediante lecturas Azure. No se ha desplegado la nueva infraestructura ni ejecutado `validate`/`what-if` contra el destino.
+El monitoreo en Dynatrace y Defender corporativo requieren configuración y comprobación por Operaciones. No se requiere Log Analytics ni Action Group. La plantilla no configura rutas ni exige DataClassification.
+
+Usar `provisionNetwork=true` únicamente para crear la red; después usar `false`, antes de las asociaciones manuales, siempre en modo incremental. Los NSG siguen administrados por Bicep.
+
+- [Guía de despliegue en Cloud Shell PowerShell](docs/DESPLIEGUE-CLOUD-SHELL.md).
+
+Validación local no equivale a cuota confirmada, validación de Azure ni despliegue. Mantener detenida la aplicación hasta completar las pruebas.
